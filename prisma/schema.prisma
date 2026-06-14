@@ -1,0 +1,84 @@
+// Loopp Refund Agent — Postgres (Neon) via Prisma.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Connection URL lives in prisma.config.ts (Prisma 7).
+}
+
+model Customer {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  accountStatus String   @default("active") // "active" | "flagged"
+  createdAt     DateTime @default(now())
+
+  orders Order[]
+
+  @@index([email])
+}
+
+model Order {
+  id            String    @id @default(cuid())
+  customerId    String
+  customerEmail String
+  placedAt      DateTime
+  deliveredAt   DateTime?
+  totalCents    Int
+
+  customer Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items    OrderItem[]
+  refunds  Refund[]
+
+  @@index([customerId])
+}
+
+model OrderItem {
+  id              String  @id @default(cuid())
+  orderId         String
+  sku             String
+  title           String
+  category        String // "standard" | "clearance" | "digital" | "perishable" | "custom"
+  priceCents      Int
+  finalSale       Boolean @default(false)
+  digitalAccessed Boolean @default(false)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model Refund {
+  id          String   @id @default(cuid())
+  orderId     String
+  itemIdsJson String // JSON array of OrderItem ids
+  amountCents Int
+  reason      String
+  status      String // "approved" | "pending" | "denied"
+  createdAt   DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model ChatTrace {
+  id                String   @id @default(cuid())
+  sessionId         String
+  turnIndex         Int
+  userMessage       String
+  assistantMessage  String?
+  status            String // "completed" | "escalated" | "denied" | "error"
+  stepsJson         String
+  totalInputTokens  Int      @default(0)
+  totalOutputTokens Int      @default(0)
+  totalCostUsd      Float    @default(0)
+  latencyMs         Int      @default(0)
+  createdAt         DateTime @default(now())
+
+  @@index([sessionId, turnIndex])
+  @@index([createdAt])
+}
