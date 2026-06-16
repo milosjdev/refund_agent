@@ -1,4 +1,4 @@
-import { TraceViewer } from "@/components/TraceViewer";
+import { AdminDashboard } from "@/components/AdminDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,7 @@ export default async function AdminPage({
           Every chat turn. Tool I/O, retries, token cost, latency.
         </p>
       </div>
-      <TraceViewer initialTraceId={trace ?? null} />
+      <AdminDashboard initialTraceId={trace ?? null} />
     </div>
   );
 }
